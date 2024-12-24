@@ -21,6 +21,7 @@ class LoadCell:
         self.tare_offset = self._load_field.model.get_value_as_float()
 
     def calibrate(self):
+        # TODO bug here
         self.calibration_factor = (self._load_field.model.get_value_as_float() - self.tare_offset)
 
     def calculate_weight(self, value):
