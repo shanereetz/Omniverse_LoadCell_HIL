@@ -5,7 +5,7 @@ This NVIDIA Omniverse extension demonstrates using a load cell as a source for p
 Currently, it's in a demo state. This documentation and the extension is being made more portable.
 
 While any serial interface can be substituted, below is a list of supplies and sample microcontroller code for the setup used in this video: https://www.youtube.com/watch?v=NinARMVomnYa
-Below is a suggested set of hardware that is 
+Below is a suggested set of hardware that is fairly cheap and easy to get started with.
 
 ## Getting Started
 
