@@ -1,0 +1,42 @@
+[core]
+reloadable = true
+order = 0
+
+[package]
+version = "1.0.0"
+category = "Simulation"
+title = "Load Cell HIL"
+description = "Connects a serial-based load cell device"
+authors = ["Shane Reetz"]
+repository = ""
+keywords = []
+changelog = "docs/CHANGELOG.md"
+readme = "docs/README.md"
+preview_image = "data/preview.png"
+icon = "data/icon.png"
+
+[settings]
+comport = 'COM3'
+
+[[python.module]]
+name = "reetz.simulation.loadcell"
+public = true
+
+[python.pipapi]
+requirements = ['pyserial']
+use_online_index = true
+
+[dependencies]
+"omni.kit.uiapp" = {}
+"omni.isaac.ui" = {}
+"omni.isaac.core" = {}
+
+[[test]]
+# Dependencies to be used during tests
+dependencies = [
+    "omni.kit.ui_test", # UI testing extension
+    "omni.usd",
+    "omni.kit.menu.utils",
+    "omni.physx"
+]
+timeout = 60
