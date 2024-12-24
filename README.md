@@ -1,6 +1,6 @@
 # Load Cell Simulation
 
-This NVIDIA Omniverse extension demonstrates using a load cell as a source for physics data inside a simulation. 
+This NVIDIA Omniverse extension demonstrates using a load cell as a source for physics data inside a simulation. This is a concept known as Hardware-In-The-Loop (HIL), where real hardware is being connected to a simulation.
 
 Currently, it's in a demo state. This documentation and the extension is being made more portable.
 
