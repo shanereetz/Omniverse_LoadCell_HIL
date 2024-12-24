@@ -8,28 +8,23 @@
 # license agreement from NVIDIA CORPORATION is strictly prohibited.
 #
 
-import sys
 import time
 
-import numpy as np
 import omni.timeline
 import omni.ui as ui
-from omni.isaac.core.prims import XFormPrim
-from omni.isaac.core.utils.nucleus import get_assets_root_path
 from omni.isaac.core.utils.prims import is_prim_path_valid
 from omni.isaac.core.utils.stage import add_reference_to_stage, create_new_stage, get_current_stage
-from omni.isaac.core.world import World
 from omni.isaac.ui.element_wrappers import CollapsableFrame, StateButton
 from omni.isaac.ui.element_wrappers.core_connectors import LoadButton, ResetButton
 from omni.isaac.ui.ui_utils import get_style
 from omni.usd import StageEventType
-from pxr import Sdf, UsdLux, Gf
+from pxr import Gf
 
 import carb
 
 from .scenario import ExampleScenario
 
-import serial
+from loadcell import LoadCell
 
 
 class UIBuilder:
