@@ -50,24 +50,6 @@ class UIBuilder:
     #           The Functions Below Are Called Automatically By extension.py
     ###################################################################################
 
-    def calculate_weight(self, value):
-        return (float(value) - self.tare_offset) * self.calibration_factor
-
-    def connect(self):
-        self.ser = serial.Serial(self._com_port.model.get_value_as_string(), 115200)
-        print(self.ser, self.ser.is_open)
-
-    def tare(self):
-        self.tare_offset = self._load_field.model.get_value_as_float()
-
-    def calibrate(self):
-        # current reading * x = calibration value / current reading
-        self.calibration_factor = 23.3 / (self._load_field.model.get_value_as_float() - self.tare_offset)
-
-    def shutdown_serial(self):
-        if self.ser:
-            self.ser.close()
-
     def on_menu_callback(self):
         """Callback for when the UI is opened from the toolbar.
         This is called directly after build_ui().
