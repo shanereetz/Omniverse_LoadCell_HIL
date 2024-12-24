@@ -26,7 +26,7 @@ class LoadCell:
         return (float(value) - self.tare_offset) * self.calibration_factor
     
     def read_load(self):
-        if self.ser and self.ser.is_open:
+        if self.is_ready():
             next_line = ''
             while(self.ser.in_waiting > 0):
                 next_line = self.ser.readline().decode('utf-8')
