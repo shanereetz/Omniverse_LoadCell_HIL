@@ -8,28 +8,23 @@
 # license agreement from NVIDIA CORPORATION is strictly prohibited.
 #
 
-import sys
 import time
 
-import numpy as np
 import omni.timeline
 import omni.ui as ui
-from omni.isaac.core.prims import XFormPrim
-from omni.isaac.core.utils.nucleus import get_assets_root_path
 from omni.isaac.core.utils.prims import is_prim_path_valid
 from omni.isaac.core.utils.stage import add_reference_to_stage, create_new_stage, get_current_stage
-from omni.isaac.core.world import World
 from omni.isaac.ui.element_wrappers import CollapsableFrame, StateButton
 from omni.isaac.ui.element_wrappers.core_connectors import LoadButton, ResetButton
 from omni.isaac.ui.ui_utils import get_style
 from omni.usd import StageEventType
-from pxr import Sdf, UsdLux, Gf
+from pxr import Gf
 
 import carb
 
 from .scenario import ExampleScenario
 
-import serial
+from loadcell import LoadCell
 
 
 class UIBuilder:
@@ -45,33 +40,14 @@ class UIBuilder:
         # Run initialization for the provided example
         self._on_init()
 
-        # Serial port and load cell setup
-        self.ser = None
-        self._test_prim = None
-        self.calibration_factor = 1
-        self.tare_offset = 0
+        self.prim_path = ""
+        self.prim_to_apply_force = None
+        self.prim_attr_to_apply_to = "physxForce:force"
+        self.load_cell = LoadCell()
 
     ###################################################################################
     #           The Functions Below Are Called Automatically By extension.py
     ###################################################################################
-
-    def calculate_weight(self, value):
-        return (float(value) - self.tare_offset) * self.calibration_factor
-
-    def connect(self):
-        self.ser = serial.Serial(self._com_port.model.get_value_as_string(), 115200)
-        print(self.ser, self.ser.is_open)
-
-    def tare(self):
-        self.tare_offset = self._load_field.model.get_value_as_float()
-
-    def calibrate(self):
-        # current reading * x = calibration value / current reading
-        self.calibration_factor = 23.3 / (self._load_field.model.get_value_as_float() - self.tare_offset)
-
-    def shutdown_serial(self):
-        if self.ser:
-            self.ser.close()
 
     def on_menu_callback(self):
         """Callback for when the UI is opened from the toolbar.
@@ -86,8 +62,8 @@ class UIBuilder:
             event (omni.timeline.TimelineEventType): Event Type
         """
         if event.type == int(omni.timeline.TimelineEventType.PLAY):
-            if self.ser:
-                self.ser.flush()
+            self.load_cell.flush()
+
         if event.type == int(omni.timeline.TimelineEventType.STOP):
             # When the user hits the stop button through the UI, they will inevitably discover edge cases where things break
             # For complete robustness, the user should resolve those edge cases here
@@ -103,18 +79,14 @@ class UIBuilder:
         Args:
             step (float): Size of physics step
         """
+        latest_load = self.load_cell.read_load()
 
-        if self.ser and self.ser.is_open:
-            next_line = ''
-            while(self.ser.in_waiting > 0):
-                next_line = self.ser.readline().decode('utf-8')
-            if 'Read' in next_line:
-                value = next_line.split(' ')[1].replace("\r\n", '')
-                value = self.calculate_weight(value)
-                self._load_field.model.set_value(value)
-                attr = self._test_prim.GetAttribute('physxForce:force')
-                val = attr.Get()
-                attr.Set(Gf.Vec3f(0, 0, -float(value)/1000))
+        if latest_load:
+            self._load_field.model.set_value(latest_load)
+
+            attr = self.prim_to_apply_force.GetAttribute(self.prim_attr_to_apply_to)
+            val = attr.Get()
+            attr.Set(Gf.Vec3f(0, 0, -float(val)/1000))
 
         # Measure time between calls
         current_time = time.time()
@@ -142,7 +114,7 @@ class UIBuilder:
         for ui_elem in self.wrapped_ui_elements:
             ui_elem.cleanup()
 
-        self.shutdown_serial()
+        self.load_cell.shutdown_serial()
 
     def build_ui(self):
         """
@@ -189,11 +161,11 @@ class UIBuilder:
                 settings = carb.settings.get_settings()
                 result = settings.get('comport')
                 self._com_port.model.set_value(result)
-                self._connect_button = ui.Button("Connect", clicked_fn=self.connect)
-                self._disconnect_button = ui.Button("Disconnect", clicked_fn=self.shutdown_serial)
-                self._calibrate_button = ui.Button("Calibrate", clicked_fn=self.calibrate)
+                self._connect_button = ui.Button("Connect", clicked_fn=self.load_cell.connect)
+                self._disconnect_button = ui.Button("Disconnect", clicked_fn=self.load_cell.shutdown_serial)
+                self._calibrate_button = ui.Button("Calibrate", clicked_fn=self.load_cell.calibrate)
                 self._load_field = ui.StringField()
-                self._tare_button = ui.Button("Tare", clicked_fn=self.tare)
+                self._tare_button = ui.Button("Tare", clicked_fn=self.load_cell.tare)
                 #self._load_bar = ui.ProgressBar(name="load in kg", min_value=0, max_value=10000, value=0)
                 self._time_diff = ui.StringField(name="Time diff", value="0")
 
@@ -232,7 +204,7 @@ class UIBuilder:
         else:
             print("Robot already on Stage")
         
-        self._test_prim = get_current_stage().GetPrimAtPath("/World/Test/Cube")
+        self.prim_to_apply_force = get_current_stage().GetPrimAtPath(self.prim_path)
         
         self._add_light_to_stage()
 
